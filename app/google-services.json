@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1038412631112",
+    "project_id": "zeta-e7bc0",
+    "storage_bucket": "zeta-e7bc0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1038412631112:android:56e16ee147b3e32e1b5c7d",
+        "android_client_info": {
+          "package_name": "com.myappcompany.rajan.zeta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1038412631112-3r30a90qo7ns6kaehs56u1otooh00erg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYKY-BuczMU3er5C9q7cQtKs0sRzqJXyw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1038412631112-3r30a90qo7ns6kaehs56u1otooh00erg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
