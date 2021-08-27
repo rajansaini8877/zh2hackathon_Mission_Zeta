@@ -8,6 +8,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+
+import static java.net.Proxy.Type.HTTP;
+
 public class EntryActivity extends AppCompatActivity {
 
     private Button mPrimaryUserButton;

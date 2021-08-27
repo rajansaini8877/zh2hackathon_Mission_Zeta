@@ -9,8 +9,10 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -35,7 +37,15 @@ import com.myappcompany.rajan.zeta.model.TransactionComparator;
 import com.myappcompany.rajan.zeta.model.TransactionItem;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -110,7 +120,7 @@ public class DependentDetailsActivity extends AppCompatActivity {
                             Toast.makeText(DependentDetailsActivity.this, "Enter all credentials first!", Toast.LENGTH_LONG).show();
                             return;
                         }
-                        transact(amount);
+                        new FusionTask().execute(Double.parseDouble(amount));
                         dialog.dismiss();
                     }
                 });
@@ -120,7 +130,15 @@ public class DependentDetailsActivity extends AppCompatActivity {
         fetchTransactions();
     }
 
-    private void transact(String amount) {
+    private void transact(String amount, boolean isSuccess, String fusionId) {
+
+        final String id = String.valueOf(Math.round(100000000.0 + (Math.random()*99999999.0)));
+
+        if(!isSuccess) {
+            addTransaction(id, false, amount, fusionId);
+            Toast.makeText(DependentDetailsActivity.this, "Transaction Failed!", Toast.LENGTH_LONG).show();
+            return;
+        }
 
         Map<String, Object> map = new HashMap<>();
         map.put("balance", mBalance+Double.parseDouble(amount));
@@ -132,13 +150,13 @@ public class DependentDetailsActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Void unused) {
                         Toast.makeText(DependentDetailsActivity.this, "Transaction Successful!", Toast.LENGTH_LONG).show();
-                        String id = String.valueOf(Math.round(100000000.0 + (Math.random()*99999999.0)));
-                        addTransaction(id, true, amount);
+                        addTransaction(id, true, amount, fusionId);
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull @NotNull Exception e) {
+                        addTransaction(id, false, amount, fusionId);
                         Toast.makeText(DependentDetailsActivity.this, "Transaction Failed!", Toast.LENGTH_LONG).show();
                     }
                 });
@@ -200,13 +218,14 @@ public class DependentDetailsActivity extends AppCompatActivity {
 
     }
 
-    private void addTransaction(String id, boolean success, String amount) {
+    private void addTransaction(String id, boolean success, String amount, String fusionId) {
 
         Map<String, Object> data = new HashMap<>();
         data.put("id", id);
         data.put("success", success);
         data.put("amount", (Double.parseDouble(amount)));
         data.put("timestamp", FieldValue.serverTimestamp());
+        data.put("fusion_id", fusionId);
 
         db.collection("secondary_users/"+mDocRef+"/transactions/")
                 .add(data)
@@ -221,5 +240,110 @@ public class DependentDetailsActivity extends AppCompatActivity {
                     }
                 });
 
+    }
+
+    private class FusionTask extends AsyncTask<Double, Void, String> {
+
+        double amount = 0.0;
+
+        @Override
+        protected String doInBackground(Double... doubles) {
+            amount = doubles[0];
+            return performFusionTransaction(Math.round(doubles[0]*100.0));
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            if(s==null) {
+                transact(String.valueOf(amount), false, s);
+            }
+            else {
+                transact(String.valueOf(amount), true, s);
+            }
+        }
+    }
+
+    private String performFusionTransaction(long amount) {
+
+        String response = null;
+        ByteArrayOutputStream out = null;
+        URL url = null;
+        HttpURLConnection http = null;
+
+        try {
+            out = new ByteArrayOutputStream();
+            url = new URL("https://fusion.preprod.zeta.in/api/v1/ifi/" + MainActivity.IFI_ID + "/transfers");
+            http = (HttpURLConnection)url.openConnection();
+            http.setRequestMethod("POST");
+            http.setDoOutput(true);
+            http.setRequestProperty("Content-Type", "application/json");
+            http.setRequestProperty("X-Zeta-AuthToken", MainActivity.AUTH_TOKEN);
+
+            String data = createJsonData(amount).toString();
+
+            byte[] output = data.getBytes(StandardCharsets.UTF_8);
+
+            OutputStream stream = http.getOutputStream();
+            stream.write(output);
+
+            InputStream in = http.getInputStream();
+
+            int bytesRead = 0;
+            byte[] buffer = new byte[1024];
+
+            while((bytesRead = in.read(buffer)) > 0) {
+                out.write(buffer, 0, bytesRead);
+            }
+
+            String temp = new String(out.toByteArray());
+
+            if(http.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                return null;
+            }
+
+            response = new JSONObject(temp).getString("transferID");
+
+            Log.d("######################", response);
+
+        }
+        catch (Exception e) {
+            Log.d("######################", e.getMessage());
+        }
+        finally {
+
+            http.disconnect();
+            try {
+                out.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return response;
+        }
+    }
+
+    private JSONObject createJsonData(long amount) throws Exception {
+
+        String id = String.valueOf(Math.round(100000000.0 + (Math.random()*99999999.0)));
+
+        JSONObject jsonObj = new JSONObject();
+
+        jsonObj.put("requestID","Zeta_Hacks_Transfer_" + id);
+
+        JSONObject amountJsonObj=new JSONObject();
+        amountJsonObj.put("currency","INR");
+        amountJsonObj.put("amount", amount);
+
+        jsonObj.put("amount",amountJsonObj);
+        jsonObj.put("transferCode","ATLAS_P2M_AUTH");
+        jsonObj.put("debitAccountID",MainActivity.PRIMARY_ACCOUNT);
+        jsonObj.put("creditAccountID",MainActivity.ZETA_BUSINESS_ACCOUNT);
+        jsonObj.put("transferTime",1581083590962L);
+        jsonObj.put("remarks","TEST");
+
+        JSONObject attributesJsonObj=new JSONObject();
+        jsonObj.put("attributes",attributesJsonObj);
+
+        return jsonObj;
     }
 }

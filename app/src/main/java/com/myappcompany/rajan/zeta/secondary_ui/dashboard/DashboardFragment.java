@@ -26,11 +26,13 @@ import com.myappcompany.rajan.zeta.R;
 import com.myappcompany.rajan.zeta.model.DependentItem;
 import com.myappcompany.rajan.zeta.model.MyDependentListItemAdapter;
 import com.myappcompany.rajan.zeta.model.MyTransactionListItemAdapter;
+import com.myappcompany.rajan.zeta.model.TransactionComparator;
 import com.myappcompany.rajan.zeta.model.TransactionItem;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 
 public class DashboardFragment extends Fragment {
@@ -104,6 +106,7 @@ public class DashboardFragment extends Fragment {
                                                 mTransactionItems.add(new TransactionItem(id, timestamp, status, amount));
                                             }
 
+                                            Collections.sort(mTransactionItems, new TransactionComparator());
                                             mRecyclerView.setAdapter(new MyTransactionListItemAdapter(mTransactionItems, getActivity()));
                                         }
 
