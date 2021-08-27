@@ -21,3 +21,8 @@
   Email: primary1@test.com, Password: password
 ## * Secondary User: 
   Email: secondary3@test.com, Password: password, PIN: 123456
+  
+
+### -> Primary, Zeta Business and Vendor accounts were created with the help of Fusion API
+### -> Checking balance is implemented with the help of Fusion API
+### -> All the transactions takes place through Fusion API
