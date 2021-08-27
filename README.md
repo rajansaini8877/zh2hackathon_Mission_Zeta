@@ -14,3 +14,10 @@
 * Internet Connectivity.
 * Inbuilt camera.
 * Google Play Services.
+
+# Demo Credentials:
+
+## * Primary User:
+  Email: primary1@test.com, Password: password
+## * Secondary User: 
+  Email: secondary3@test.com, Password: password, PIN: 123456
